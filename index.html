@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SIG Cali — Gestión de Incidentes</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ═══ SIDEBAR ═══════════════════════════════════════════ -->
+  <div class="sidebar">
+
+    <!-- Ilustración cartográfica SVG -->
+    <div class="sidebar-art">
+      <svg viewBox="0 0 700 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+            <path d="M48 0L0 0 0 48" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width=".8"/>
+          </pattern>
+          <pattern id="grid2" width="192" height="192" patternUnits="userSpaceOnUse">
+            <path d="M192 0L0 0 0 192" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+          </pattern>
+        </defs>
+        <!-- Cuadrícula base -->
+        <rect width="700" height="900" fill="url(#grid)"/>
+        <rect width="700" height="900" fill="url(#grid2)"/>
+        <!-- Curvas de nivel — zona A -->
+        <ellipse cx="180" cy="340" rx="210" ry="140" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+        <ellipse cx="180" cy="340" rx="165" ry="108" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+        <ellipse cx="180" cy="340" rx="120" ry="76"  fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+        <ellipse cx="180" cy="340" rx="75"  ry="46"  fill="none" stroke="rgba(255,255,255,0.09)" stroke-width="1"/>
+        <ellipse cx="180" cy="340" rx="32"  ry="20"  fill="none" stroke="rgba(255,255,255,0.11)" stroke-width="1"/>
+        <!-- Curvas de nivel — zona B -->
+        <ellipse cx="520" cy="640" rx="180" ry="130" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+        <ellipse cx="520" cy="640" rx="130" ry="92"  fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+        <ellipse cx="520" cy="640" rx="82"  ry="56"  fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+        <ellipse cx="520" cy="640" rx="38"  ry="24"  fill="none" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
+        <!-- Vías urbanas -->
+        <line x1="0"   y1="460" x2="700" y2="430" stroke="rgba(255,255,255,0.07)" stroke-width="1.2"/>
+        <line x1="0"   y1="510" x2="700" y2="480" stroke="rgba(255,255,255,0.05)" stroke-width=".8"/>
+        <line x1="240" y1="0"   x2="280" y2="900" stroke="rgba(255,255,255,0.07)" stroke-width="1.2"/>
+        <line x1="420" y1="0"   x2="460" y2="900" stroke="rgba(255,255,255,0.05)" stroke-width=".8"/>
+        <line x1="0"   y1="220" x2="700" y2="200" stroke="rgba(255,255,255,0.04)" stroke-width=".8"/>
+        <line x1="0"   y1="720" x2="700" y2="700" stroke="rgba(255,255,255,0.04)" stroke-width=".8"/>
+        <!-- Río Cauca -->
+        <path d="M60 0 Q120 200 90 400 Q60 600 110 900" fill="none" stroke="rgba(28,95,138,0.35)" stroke-width="18" stroke-linecap="round"/>
+        <path d="M60 0 Q120 200 90 400 Q60 600 110 900" fill="none" stroke="rgba(28,95,138,0.15)" stroke-width="30" stroke-linecap="round"/>
+        <!-- Pines críticos (rojo) -->
+        <line x1="180" y1="322" x2="180" y2="348" stroke="#e8401c" stroke-width="1.5" opacity=".9"/>
+        <circle cx="180" cy="314" r="7"  fill="#e8401c" opacity=".9"/>
+        <circle cx="180" cy="314" r="13" fill="none" stroke="#e8401c" stroke-width="1" opacity=".4"/>
+        <circle cx="180" cy="314" r="22" fill="none" stroke="#e8401c" stroke-width=".6" opacity=".18"/>
+        <line x1="520" y1="620" x2="520" y2="646" stroke="#e8401c" stroke-width="1.5" opacity=".8"/>
+        <circle cx="520" cy="612" r="7"  fill="#e8401c" opacity=".8"/>
+        <circle cx="520" cy="612" r="13" fill="none" stroke="#e8401c" stroke-width="1" opacity=".35"/>
+        <!-- Pines medios (azul) -->
+        <line x1="370" y1="202" x2="370" y2="222" stroke="#4a90c4" stroke-width="1.2" opacity=".7"/>
+        <circle cx="370" cy="195" r="5" fill="#4a90c4" opacity=".7"/>
+        <circle cx="370" cy="195" r="10" fill="none" stroke="#4a90c4" stroke-width=".8" opacity=".3"/>
+        <line x1="290" y1="558" x2="290" y2="578" stroke="#4a90c4" stroke-width="1.2" opacity=".6"/>
+        <circle cx="290" cy="551" r="5" fill="#4a90c4" opacity=".6"/>
+        <line x1="580" y1="320" x2="580" y2="340" stroke="#4a90c4" stroke-width="1.2" opacity=".55"/>
+        <circle cx="580" cy="313" r="5" fill="#4a90c4" opacity=".55"/>
+        <line x1="140" y1="680" x2="140" y2="698" stroke="#4a90c4" stroke-width="1.2" opacity=".5"/>
+        <circle cx="140" cy="673" r="5" fill="#4a90c4" opacity=".5"/>
+        <!-- Líneas de conexión -->
+        <line x1="180" y1="340" x2="370" y2="195" stroke="rgba(255,255,255,0.07)" stroke-width=".8" stroke-dasharray="4 5"/>
+        <line x1="370" y1="195" x2="580" y2="313" stroke="rgba(255,255,255,0.06)" stroke-width=".8" stroke-dasharray="4 5"/>
+        <line x1="180" y1="340" x2="290" y2="551" stroke="rgba(255,255,255,0.06)" stroke-width=".8" stroke-dasharray="4 5"/>
+        <line x1="290" y1="551" x2="520" y2="612" stroke="rgba(255,255,255,0.07)" stroke-width=".8" stroke-dasharray="4 5"/>
+        <!-- Etiquetas -->
+        <rect x="196" y="298" width="70" height="22" rx="2" fill="rgba(232,64,28,0.15)" stroke="rgba(232,64,28,0.35)" stroke-width=".8"/>
+        <text x="200" y="313" font-family="monospace" font-size="7" fill="rgba(232,64,28,0.85)" letter-spacing=".5">INC-0041 · ALTA</text>
+        <rect x="368" y="165" width="64" height="20" rx="2" fill="rgba(74,144,196,0.12)" stroke="rgba(74,144,196,0.3)" stroke-width=".8"/>
+        <text x="372" y="179" font-family="monospace" font-size="7" fill="rgba(74,144,196,0.8)" letter-spacing=".5">INC-0038 · MED</text>
+        <!-- Escala gráfica -->
+        <line x1="40" y1="858" x2="160" y2="858" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
+        <line x1="40" y1="853" x2="40"  y2="863" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
+        <line x1="160" y1="853" x2="160" y2="863" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
+        <text x="82" y="874" font-family="monospace" font-size="8" fill="rgba(255,255,255,0.3)" letter-spacing=".8">0        5 km</text>
+        <!-- Rosa de los vientos -->
+        <g transform="translate(636,56)">
+          <line x1="0" y1="-18" x2="0" y2="18"   stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
+          <line x1="-18" y1="0" x2="18" y2="0"   stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+          <polygon points="0,-18 -4,-8 0,-12 4,-8" fill="rgba(255,255,255,0.7)"/>
+          <polygon points="0,18 -4,8 0,12 4,8"    fill="rgba(255,255,255,0.2)"/>
+          <text x="0" y="-22" text-anchor="middle" font-family="monospace" font-size="8" fill="rgba(255,255,255,0.5)">N</text>
+        </g>
+        <!-- Esquinas decorativas -->
+        <path d="M20 20 L20 50 M20 20 L50 20"    stroke="rgba(255,255,255,0.15)" stroke-width="1.5" fill="none"/>
+        <path d="M680 20 L680 50 M680 20 L650 20" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" fill="none"/>
+        <path d="M20 880 L20 850 M20 880 L50 880" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" fill="none"/>
+      </svg>
+    </div><!-- /sidebar-art -->
+
+    <!-- Contenido del sidebar -->
+    <div class="sidebar-content">
+      <div class="logo">
+        <div class="logo-mark"></div>
+        <div class="logo-text">
+          <strong>SIG Cali</strong>
+          Sistema de Gestión de Incidentes
+        </div>
+      </div>
+
+      <div class="sidebar-headline">
+        <div class="sidebar-label">Módulo de acceso</div>
+        <h1>Gestión<br/><strong>Geoespacial</strong><br/>de Incidentes</h1>
+        <p class="sidebar-desc">
+          Plataforma de registro, análisis cartográfico y seguimiento
+          de incidentes urbanos en el municipio de Santiago de Cali,
+          Valle del Cauca.
+        </p>
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-val">3<span>,</span>841</div>
+            <div class="stat-lbl">Incidentes registrados</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val">22</div>
+            <div class="stat-lbl">Comunas activas</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        Alcaldía de Cali · Secretaría de TIC · v2.4.1
+      </div>
+    </div><!-- /sidebar-content -->
+  </div><!-- /sidebar -->
+
+
+  <!-- ═══ PANEL DERECHO — Formulario ═══════════════════════ -->
+  <div class="right">
+    <div class="card">
+
+      <div class="card-topbar">
+        <span class="system-id">SIG-CALI / Reporte de incidentes</span>
+        <span class="status-dot">Sistema operativo</span>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('login')">Iniciar sesión</button>
+        <button class="tab" onclick="switchTab('register')">Registrarse</button>
+      </div>
+
+      <!-- Panel: Iniciar sesión -->
+      <div id="loginPanel" class="form-panel active">
+        <div class="form-title">Acceso al sistema</div>
+        <div class="form-sub">Ingresa tus credenciales para continuar.</div>
+
+        <div class="field">
+          <label>Usuario o correo</label>
+          <div class="input-wrap">
+            <span class="input-icon">
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+              </svg>
+            </span>
+            <input type="text" id="loginUser" placeholder="usuario o correo@gmail.com"/>
+          </div>
+          <p class="err-msg" id="errLoginUser">Campo requerido.</p>
+        </div>
+
+        <div class="field">
+          <label>Contraseña</label>
+          <div class="input-wrap">
+            <span class="input-icon">
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2"/>
+                <path d="M7 11V7a5 5 0 0110 0v4"/>
+              </svg>
+            </span>
+            <input type="password" id="loginPass" placeholder="Contraseña"/>
+            <button class="toggle-pw" onclick="togglePw('loginPass')" tabindex="-1">
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+          <p class="err-msg" id="errLoginPass">Campo requerido.</p>
+        </div>
+
+        <div class="forgot-row">
+          <a href="#" onclick="openModal(); return false;">¿Olvidaste tu contraseña?</a>
+        </div>
+
+        <button class="btn-primary" onclick="handleLogin()">Ingresar al sistema</button>
+
+        <div class="divider">o</div>
+
+        <button class="btn-sso">
+          <svg width="16" height="16" viewBox="0 0 48 48">
+            <path fill="#4285F4" d="M46.6 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.8 7.2v6h7.8c4.6-4.2 7.9-10.4 7.9-17.2z"/>
+            <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.8-5.8l-7.8-6c-2.1 1.4-4.8 2.2-8 2.2-6.1 0-11.3-4.1-13.2-9.7H2.7v6.2C6.7 42.9 14.8 48 24 48z"/>
+            <path fill="#FBBC05" d="M10.8 28.7c-.5-1.4-.7-2.9-.7-4.5s.3-3.1.7-4.5v-6.2H2.7C1 17.1 0 20.4 0 24s1 6.9 2.7 9.5l8.1-6.3z"/>
+            <path fill="#EA4335" d="M24 9.5c3.4 0 6.5 1.2 8.9 3.5l6.7-6.7C35.9 2.1 30.5 0 24 0 14.8 0 6.7 5.1 2.7 12.5l8.1 6.2C12.7 13.6 17.9 9.5 24 9.5z"/>
+          </svg>
+          Continuar con cuenta Google
+        </button>
+      </div><!-- /loginPanel -->
+
+      <!-- Panel: Registrarse -->
+      <div id="registerPanel" class="form-panel">
+        <div class="form-title">Crear cuenta</div>
+        <div class="form-sub">Completa los datos para solicitar acceso al sistema.</div>
+
+        <div class="row-2">
+          <div class="field">
+            <label>Nombres</label>
+            <div class="input-wrap">
+              <span class="input-icon">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+                </svg>
+              </span>
+              <input type="text" id="regFirst" placeholder="Nombres"/>
+            </div>
+            <p class="err-msg" id="errRegFirst">Requerido.</p>
+          </div>
+          <div class="field">
+            <label>Apellidos</label>
+            <div class="input-wrap">
+              <span class="input-icon">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+                </svg>
+              </span>
+              <input type="text" id="regLast" placeholder="Apellidos"/>
+            </div>
+            <p class="err-msg" id="errRegLast">Requerido.</p>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Correo</label>
+          <div class="input-wrap">
+            <span class="input-icon">
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+              </svg>
+            </span>
+            <input type="email" id="regEmail" placeholder="nombre@cali.gov.co"/>
+          </div>
+          <p class="err-msg" id="errRegEmail">Ingresa un correo válido.</p>
+        </div>
+
+        <div class="field">
+          <label>Perfil de acceso</label>
+          <div class="role-row">
+            <label class="role-opt selected" id="roleA">
+              <input type="radio" name="role" value="ciudadano" checked onchange="selectRole('roleA','roleB')"/>
+              <div class="role-opt-label"><span class="role-dot"></span>Ciudadano</div>
+            </label>
+            <label class="role-opt" id="roleB">
+              <input type="radio" name="role" value="operador" onchange="selectRole('roleB','roleA')"/>
+              <div class="role-opt-label"><span class="role-dot"></span>Operador / Entidad</div>
+            </label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Contraseña</label>
+          <div class="input-wrap">
+            <span class="input-icon">
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2"/>
+                <path d="M7 11V7a5 5 0 0110 0v4"/>
+              </svg>
+            </span>
+            <input type="password" id="regPass" placeholder="Mínimo 8 caracteres"/>
+            <button class="toggle-pw" onclick="togglePw('regPass')" tabindex="-1">
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+          <p class="err-msg" id="errRegPass">Mínimo 8 caracteres.</p>
+        </div>
+
+        <div class="field">
+          <label>Confirmar contraseña</label>
+          <div class="input-wrap">
+            <span class="input-icon">
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2"/>
+                <path d="M7 11V7a5 5 0 0110 0v4"/>
+              </svg>
+            </span>
+            <input type="password" id="regPass2" placeholder="Repite la contraseña"/>
+          </div>
+          <p class="err-msg" id="errRegPass2">Las contraseñas no coinciden.</p>
+        </div>
+
+        <div class="terms-row">
+          <input type="checkbox" id="termsCheck"/>
+          <span>
+            Acepto los <a href="#">Términos de uso</a> y la
+            <a href="#">Política de datos personales</a> del sistema SIG Cali.
+          </span>
+        </div>
+        <p class="err-msg" id="errTerms" style="margin-top:-8px; margin-bottom:12px">
+          Debes aceptar los términos.
+        </p>
+
+        <button class="btn-primary" onclick="handleRegister()">Solicitar acceso</button>
+      </div><!-- /registerPanel -->
+
+    </div><!-- /card -->
+  </div><!-- /right -->
+
+</div><!-- /layout -->
+
+
+<!-- ═══ MODAL — Recuperar contraseña ══════════════════════ -->
+<div class="overlay" id="forgotOverlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div class="modal-tag">Recuperación de acceso</div>
+    <h3>Restablecer contraseña</h3>
+    <p>
+      Ingresa tu correo institucional registrado. Recibirás un enlace
+      para restablecer tu acceso en los próximos minutos.
+    </p>
+    <div class="field">
+      <label>Correo institucional</label>
+      <div class="input-wrap">
+        <span class="input-icon">
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+            <polyline points="22,6 12,13 2,6"/>
+          </svg>
+        </span>
+        <input type="email" id="forgotEmail" placeholder="correo@cali.gov.co"/>
+      </div>
+      <p class="err-msg" id="errForgot">Ingresa un correo válido.</p>
+    </div>
+    <button class="btn-primary" style="margin-top:8px" onclick="handleForgot()">
+      Enviar enlace de recuperación
+    </button>
+  </div>
+</div><!-- /overlay -->
+
+
+<!-- Toast de notificaciones -->
+<div class="toast" id="toast"></div>
+
+<!-- JavaScript -->
+<script src="app.js"></script>
+
+</body>
+</html>
