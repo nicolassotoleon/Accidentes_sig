@@ -80,7 +80,7 @@ $rol_sesion     = isset($_SESSION['rol'])      ? $_SESSION['rol']      : 'ciudad
       <p class="panel-sub">Completa el formulario y haz clic en el mapa para capturar la ubicación.</p>
     </div>
 
-    <form id="formIncidente" enctype="multipart/form-data" onsubmit="handleSubmitIncidente(event)">
+    <form id="formIncidente" enctype="multipart/form-data">
 
       <!-- Tipo de incidente -->
       <div class="field">
@@ -101,7 +101,6 @@ $rol_sesion     = isset($_SESSION['rol'])      ? $_SESSION['rol']      : 'ciudad
             </svg>
           </span>
         </div>
-        <p class="err-msg" id="errTipo">Selecciona el tipo de incidente.</p>
       </div>
 
       <!-- Prioridad -->
@@ -124,7 +123,6 @@ $rol_sesion     = isset($_SESSION['rol'])      ? $_SESSION['rol']      : 'ciudad
             <span class="pri-label">Baja</span>
           </label>
         </div>
-        <p class="err-msg" id="errPrioridad">Selecciona la prioridad.</p>
       </div>
 
       <!-- Descripción -->
@@ -159,7 +157,6 @@ $rol_sesion     = isset($_SESSION['rol'])      ? $_SESSION['rol']      : 'ciudad
         </div>
         <input type="hidden" id="incLatitud"  name="latitud"/>
         <input type="hidden" id="incLongitud" name="longitud"/>
-        <p class="err-msg" id="errCoordenada">Haz clic en el mapa para capturar la ubicación.</p>
       </div>
 
       <!-- Comuna + Barrio -->
@@ -404,13 +401,6 @@ $rol_sesion     = isset($_SESSION['rol'])      ? $_SESSION['rol']      : 'ciudad
 
 <!-- Scripts -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-/* ─────────────────────────────────────────────────────────
-   Variables de sesión disponibles en JS
-───────────────────────────────────────────────────────── */
-const SESSION_USER = <?= json_encode($usuario_sesion) ?>;
-const SESSION_ROL  = <?= json_encode($rol_sesion) ?>;
-</script>
 <script src="dashboard.js"></script>
 
 </body>
