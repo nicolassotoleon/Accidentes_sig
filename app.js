@@ -32,7 +32,7 @@ function handleLogin() {
     .then(res => res.text())
     .then(data => {
         if(data === "ok"){
-            window.location.href = "dashboard.php";
+            window.location.href = "registro_incidente.php";
         } else {
             alert("Credenciales incorrectas");
         }

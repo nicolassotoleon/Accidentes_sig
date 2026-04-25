@@ -1,46 +1,48 @@
 <?php
-// guardar_incidente.php
 header('Content-Type: application/json');
 include 'conexion.php';
-
 $conn = conexion();
 
-// Recibir datos del FormData
-$tipo        = $_POST['tipo'];
-$prioridad   = strtoupper($_POST['prioridad']); // Se guarda en MAYÚSCULAS para la DB
-$descripcion = $_POST['descripcion'];
-$lat         = $_POST['latitud'];
-$lng         = $_POST['longitud'];
-$direccion   = $_POST['direccion'];
-$comuna      = isset($_POST['comuna']) ? $_POST['comuna'] : null;
-$barrio      = isset($_POST['barrio']) ? $_POST['barrio'] : null;
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Recibimos los datos del formulario
+    $tipo        = $_POST['tipo_incidente'] ?? '';
+    $prioridad   = $_POST['prioridad'] ?? '';
+    $descripcion = $_POST['descripcion'] ?? '';
+    $lat         = $_POST['latitud'] ?? '';
+    $lng         = $_POST['longitud'] ?? '';
+    $direccion   = $_POST['direccion'] ?? '';
 
-$rutaFoto = null;
-
-// Manejo de la fotografía
-if (isset($_FILES['fotografia']) && $_FILES['fotografia']['error'] == 0) {
-    $nombre = time() . "_" . basename($_FILES['fotografia']['name']);
-    $ruta = "uploads/" . $nombre;
-    if (!file_exists("uploads")) { 
-        mkdir("uploads", 0777, true); 
+    // Procesar la foto
+    $rutaFoto = null;
+    if (isset($_FILES['fotografia']) && $_FILES['fotografia']['error'] === 0) {
+        $dir = "uploads/";
+        if (!file_exists($dir)) mkdir($dir, 0777, true);
+        $nombreFoto = time() . "_" . basename($_FILES['fotografia']['name']);
+        $rutaDestino = $dir . $nombreFoto;
+        if (move_uploaded_file($_FILES['fotografia']['tmp_name'], $rutaDestino)) {
+            $rutaFoto = $rutaDestino;
+        }
     }
-    if (move_uploaded_file($_FILES['fotografia']['tmp_name'], $ruta)) {
-        $rutaFoto = $ruta;
+
+    // SQL ajustado a tu tabla (comuna y barrio se omiten por el trigger)
+    // Usamos ST_SetSRID y ST_MakePoint para el campo geom
+    $sql = "INSERT INTO registros (
+                tipo_incidente, prioridad, descripcion, latitud, longitud, 
+                direccion, fotografia, geom, fecha_registro
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, 
+                ST_SetSRID(ST_MakePoint($5, $4), 4326), 
+                NOW()
+            )";
+
+    $params = [$tipo, $prioridad, $descripcion, $lat, $lng, $direccion, $rutaFoto];
+    $result = pg_query_params($conn, $sql, $params);
+
+    if ($result) {
+        echo json_encode(["status" => "success"]);
+    } else {
+        echo json_encode(["status" => "error", "message" => pg_last_error($conn)]);
     }
-}
-
-$sql = "INSERT INTO registros 
-(tipo_incidente, prioridad, descripcion, latitud, longitud, direccion, comuna, barrio, fotografia, fecha_reporte, estado)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), 'Pendiente')";
-
-$result = pg_query_params($conn, $sql, [
-    $tipo, $prioridad, $descripcion, $lat, $lng, $direccion, $comuna, $barrio, $rutaFoto
-]);
-
-if ($result) {
-    echo json_encode(["status" => "ok", "message" => "Incidente registrado correctamente"]);
 } else {
-    http_response_code(500);
-    echo json_encode(["status" => "error", "message" => pg_last_error($conn)]);
+    echo json_encode(["status" => "error", "message" => "Acceso no permitido"]);
 }
 ?>
