@@ -63,3 +63,14 @@ function handleRegister() {
         }
     });
 }
+
+// 👇 FUNCIÓN QUE TE FALTABA (SOLUCIÓN)
+function selectRole(selectedId, otherId) {
+    const selected = document.getElementById(selectedId);
+    const other = document.getElementById(otherId);
+
+    if (!selected || !other) return;
+
+    selected.classList.add('selected');
+    other.classList.remove('selected');
+}
