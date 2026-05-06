@@ -17,29 +17,47 @@ function switchTab(tab) {
     }
 }
 
-// LOGIN
+// LOGIN CORREGIDO
 function handleLogin() {
+    // 1. Capturamos los valores reales de los campos
     const usuario = document.getElementById("loginUser").value;
-    const password = document.getElementById("loginPass").value;
+    const pass = document.getElementById("loginPass").value;
 
-    fetch("login.php", {
-        method: "POST",
+    if (!usuario || !pass) {
+        alert("Por favor, completa todos los campos.");
+        return;
+    }
+
+    // 2. Definimos los parámetros (esto reemplaza al formData que causaba error)
+    const params = `usuario=${encodeURIComponent(usuario)}&password=${encodeURIComponent(pass)}`;
+
+    // 3. Petición al servidor
+    fetch('login.php', {
+        method: 'POST',
         headers: {
             "Content-Type": "application/x-www-form-urlencoded"
         },
-        body: `usuario=${usuario}&password=${password}`
+        body: params // <--- Aquí usamos 'params', NO 'formData'
     })
-    .then(res => res.text())
+    .then(response => response.text())
     .then(data => {
-        if(data === "ok"){
+        const rol = data.trim();
+
+        // 4. Redirección por roles
+        if (rol === "operador") {
+            window.location.href = "admin_incidentes.php";
+        } else if (rol === "ciudadano") {
             window.location.href = "registro_incidente.php";
         } else {
-            alert("Credenciales incorrectas");
+            alert("Usuario o contraseña incorrectos.");
         }
+    })
+    .catch(error => {
+        console.error('Error:', error);
     });
 }
 
-// REGISTRO
+// REGISTRO (Sin cambios, ya está capturando bien los datos)
 function handleRegister() {
     const nombres = document.getElementById("regFirst").value;
     const apellidos = document.getElementById("regLast").value;
@@ -56,15 +74,16 @@ function handleRegister() {
     })
     .then(res => res.text())
     .then(data => {
-        if(data === "ok"){
+        if(data.trim() === "ok"){
             alert("Usuario registrado correctamente");
+            switchTab('login'); // Sugerencia: llevar al usuario al login tras registrarse
         } else {
             alert("Error al registrar");
         }
     });
 }
 
-// 👇 FUNCIÓN QUE TE FALTABA (SOLUCIÓN)
+// FUNCIÓN DE SELECCIÓN DE ROL
 function selectRole(selectedId, otherId) {
     const selected = document.getElementById(selectedId);
     const other = document.getElementById(otherId);
