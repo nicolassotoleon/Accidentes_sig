@@ -417,6 +417,40 @@ if (!isset($_SESSION['usuario'])) { header("Location: index.html"); exit(); }
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
+        /* ── FIX: Controles Leaflet nunca superan el header sticky ── */
+        .map-container .leaflet-top,
+        .map-container .leaflet-bottom {
+            z-index: 500 !important;
+        }
+
+        /* ── FILTROS DE TABLA ── */
+        .th-filter {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .th-filter-label {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+        .th-filter select {
+            font-family: var(--sans);
+            font-size: 0.72rem;
+            padding: 4px 6px;
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            background: white;
+            color: var(--text);
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.2s;
+            width: 100%;
+        }
+        .th-filter select:focus { border-color: var(--accent); }
+
         /* ── RESPONSIVE ── */
         @media (max-width: 768px) {
             .header-vis { padding: 0 16px; }
@@ -616,8 +650,30 @@ if (!isset($_SESSION['usuario'])) { header("Location: index.html"); exit(); }
             <table>
                 <thead>
                     <tr>
-                        <th>Incidente</th>
-                        <th>Prioridad</th>
+                        <th>
+                            <div class="th-filter">
+                                <span class="th-filter-label">Incidente</span>
+                                <select id="filtro-tipo" onchange="aplicarFiltros()">
+                                    <option value="">Todos</option>
+                                    <option value="inundacion">Inundación</option>
+                                    <option value="alumbrado_publico">Alumbrado Público</option>
+                                    <option value="huecos">Huecos / Vías</option>
+                                    <option value="transito">Tránsito</option>
+                                    <option value="otro">Otro</option>
+                                </select>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="th-filter">
+                                <span class="th-filter-label">Prioridad</span>
+                                <select id="filtro-prioridad" onchange="aplicarFiltros()">
+                                    <option value="">Todas</option>
+                                    <option value="ALTA">Alta</option>
+                                    <option value="MEDIA">Media</option>
+                                    <option value="BAJA">Baja</option>
+                                </select>
+                            </div>
+                        </th>
                         <th>Ubicación</th>
                         <th>Comuna</th>
                         <th>Barrio</th>
@@ -1003,8 +1059,19 @@ function construirTabla() {
         `;
 
         const searchText = `${d.tipo_incidente} ${d.prioridad} ${d.direccion || ''} ${d.descripcion || ''} ${comuna} ${barrio}`.toLowerCase();
-        tableRows.push({ el: tr, text: searchText });
+        tableRows.push({ el: tr, tipo: (d.tipo_incidente || '').toLowerCase(), prioridad: (d.prioridad || '').toUpperCase() });
         tbody.appendChild(tr);
+    });
+}
+
+function aplicarFiltros() {
+    const filtroTipo      = document.getElementById('filtro-tipo').value;
+    const filtroPrioridad = document.getElementById('filtro-prioridad').value;
+
+    tableRows.forEach(row => {
+        const pasaTipo      = !filtroTipo      || row.tipo      === filtroTipo.toLowerCase();
+        const pasaPrioridad = !filtroPrioridad || row.prioridad === filtroPrioridad.toUpperCase();
+        row.el.style.display = (pasaTipo && pasaPrioridad) ? '' : 'none';
     });
 }
 
