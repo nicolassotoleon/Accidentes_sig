@@ -564,12 +564,79 @@ if (!isset($_SESSION['usuario'])) { header("Location: index.html"); exit(); }
         </div>
     </div>
 
+    <!-- SECCIÓN GRÁFICOS ESTADÍSTICOS -->
+    <div style="margin-top: 36px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+        <div class="section-label" style="margin-bottom: 0;">Análisis Estadístico</div>
+        <button id="btn-toggle-graficos" onclick="toggleGraficos()"
+            style="display:flex; align-items:center; gap:8px; padding:9px 20px;
+                   background:var(--sidebar-bg); color:white; border:none; border-radius:4px;
+                   font-family:var(--sans); font-size:0.8rem; font-weight:600;
+                   letter-spacing:0.04em; text-transform:uppercase; cursor:pointer;
+                   transition:background 0.2s;">
+            <span style="font-size:1rem;">📊</span> Ver Gráficos
+        </button>
+    </div>
+
+    <div id="graficos-section" style="display:none;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:36px;">
+
+            <!-- Gráfico por Comunas -->
+            <div style="background:white; border-radius:4px; border:1px solid var(--border);
+                        box-shadow:0 2px 10px rgba(0,0,0,0.04); overflow:hidden;">
+                <div style="padding:16px 20px; border-bottom:1px solid var(--border); background:#fafbfc;">
+                    <h3 style="font-size:0.88rem; color:var(--sidebar-bg); font-weight:600;">Reportes por Comuna</h3>
+                    <p style="font-size:0.72rem; color:var(--text-muted); margin-top:3px;">Solo comunas con al menos un reporte registrado</p>
+                </div>
+                <div style="padding:20px;">
+                    <canvas id="grafico-comunas" height="260"></canvas>
+                </div>
+            </div>
+
+            <!-- Gráfico por Barrios -->
+            <div style="background:white; border-radius:4px; border:1px solid var(--border);
+                        box-shadow:0 2px 10px rgba(0,0,0,0.04); overflow:hidden;">
+                <div style="padding:16px 20px; border-bottom:1px solid var(--border); background:#fafbfc;">
+                    <h3 style="font-size:0.88rem; color:var(--sidebar-bg); font-weight:600;">Reportes por Barrio</h3>
+                    <p style="font-size:0.72rem; color:var(--text-muted); margin-top:3px;">Solo barrios con al menos un reporte registrado</p>
+                </div>
+                <div style="padding:20px;">
+                    <canvas id="grafico-barrios" height="260"></canvas>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- TABLA DE INCIDENTES -->
+    <div class="table-card" style="margin-top: 36px;">
+        <div class="table-header">
+            <h2>Detalle de Incidentes Registrados</h2>
+        </div>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Incidente</th>
+                        <th>Prioridad</th>
+                        <th>Ubicación</th>
+                        <th>Comuna</th>
+                        <th>Barrio</th>
+                        <th>Fecha de Registro</th>
+                        <th>Evidencia</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-body"></tbody>
+            </table>
+        </div>
+    </div>
+
 </div><!-- /container -->
 
 <!-- SCRIPTS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <script>
 // ═══════════════════════════════════════════════
@@ -638,20 +705,30 @@ let clusterMode       = 'cluster';
 async function cargarDatos() {
     try {
         const response = await fetch('consultar_incidentes.php');
-        allData = await response.json();
+        const raw = await response.json();
 
-        procesarEstadisticas();
-        construirMapaTematico();
-        construirCalorTotal();
-        construirCalorTipo('inundacion');
-        construirCluster();
-        construirTabla();
-
+        // Verificar que sea un array válido y no un objeto de error
+        if (!Array.isArray(raw)) {
+            console.error('consultar_incidentes.php devolvio:', raw);
+            allData = [];
+        } else {
+            allData = raw;
+        }
     } catch (err) {
-        console.error('Error cargando datos:', err);
-    } finally {
-        document.getElementById('loadingOverlay').style.display = 'none';
+        console.error('Error cargando datos desde el servidor:', err);
+        allData = [];
     }
+
+    // Cada seccion se ejecuta de forma independiente para que un
+    // fallo en los mapas no impida mostrar la tabla
+    try { procesarEstadisticas(); }          catch(e) { console.error('estadisticas:', e); }
+    try { construirMapaTematico(); }         catch(e) { console.error('mapa tematico:', e); }
+    try { construirCalorTotal(); }           catch(e) { console.error('calor total:', e); }
+    try { construirCalorTipo('inundacion'); } catch(e) { console.error('calor tipo:', e); }
+    try { construirCluster(); }              catch(e) { console.error('cluster:', e); }
+    try { construirTabla(); }                catch(e) { console.error('tabla:', e); }
+
+    document.getElementById('loadingOverlay').style.display = 'none';
 }
 
 // ═══════════════════════════════════════════════
@@ -899,31 +976,35 @@ function construirTabla() {
         const color = TIPO_COLORS[d.tipo_incidente] || '#6b7280';
         const tr    = document.createElement('tr');
         const fecha = d.fecha_registro ? new Date(d.fecha_registro).toLocaleDateString('es-CO') : '—';
-        const coords = d.latitud ? `${parseFloat(d.latitud).toFixed(5)}, ${parseFloat(d.longitud).toFixed(5)}` : '—';
+
+        // Nombre legible del tipo (reemplazar guiones bajos por espacios)
+        const tipoLabel = (TIPO_LABELS[d.tipo_incidente] || d.tipo_incidente || '—')
+            .replace(/_/g, ' ');
+
+        const comuna = d.comuna || '—';
+        const barrio = d.barrio || '—';
 
         tr.innerHTML = `
-            <td style="font-family:var(--mono); font-size:0.75rem; color:var(--text-muted)">${d.id || i+1}</td>
-            <td><span class="tipo-chip"><span style="width:8px;height:8px;border-radius:50%;background:${color};display:inline-block;"></span>${TIPO_LABELS[d.tipo_incidente] || d.tipo_incidente}</span></td>
+            <td>
+                <span style="display:inline-flex; align-items:center; gap:6px; font-weight:600; font-size:0.88rem; color:var(--text);">
+                    <span style="width:9px;height:9px;border-radius:50%;background:${color};flex-shrink:0;display:inline-block;"></span>
+                    ${tipoLabel}
+                </span>
+            </td>
             <td><span class="badge badge-${(d.prioridad||'').toLowerCase()}">${d.prioridad || '—'}</span></td>
-            <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${d.direccion || '—'}</td>
-            <td style="font-family:var(--mono); font-size:0.75rem;">${coords}</td>
-            <td>${fecha}</td>
+            <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:0.875rem;">${d.direccion || '—'}</td>
+            <td style="font-size:0.875rem; color:var(--text-muted);">${comuna}</td>
+            <td style="font-size:0.875rem; color:var(--text-muted);">${barrio}</td>
+            <td style="font-size:0.875rem; color:var(--text-muted);">${fecha}</td>
             <td>${d.fotografia
-                ? `<a href="${d.fotografia}" target="_blank" style="color:var(--accent); font-weight:600; font-size:0.8rem;">Ver foto ↗</a>`
-                : '<span style="color:#ccc; font-size:0.8rem;">N/A</span>'
+                ? `<a href="${d.fotografia}" target="_blank" style="color:var(--accent); font-weight:600; font-size:0.85rem; text-decoration:none;">Ver Foto ↗</a>`
+                : '<span style="color:#c8d0d8; font-size:0.85rem;">N/A</span>'
             }</td>
         `;
 
-        const searchText = `${d.tipo_incidente} ${d.prioridad} ${d.direccion || ''} ${d.descripcion || ''}`.toLowerCase();
+        const searchText = `${d.tipo_incidente} ${d.prioridad} ${d.direccion || ''} ${d.descripcion || ''} ${comuna} ${barrio}`.toLowerCase();
         tableRows.push({ el: tr, text: searchText });
         tbody.appendChild(tr);
-    });
-}
-
-function filterTable(query) {
-    const q = query.toLowerCase();
-    tableRows.forEach(row => {
-        row.el.style.display = row.text.includes(q) ? '' : 'none';
     });
 }
 
@@ -947,6 +1028,130 @@ function switchMap(name, btn) {
 
 function invalidarMapa(mapa) {
     mapa.invalidateSize();
+}
+
+// ═══════════════════════════════════════════════
+// GRÁFICOS ESTADÍSTICOS
+// ═══════════════════════════════════════════════
+let graficosCreados = false;
+let chartComunas = null;
+let chartBarrios = null;
+
+function toggleGraficos() {
+    const section = document.getElementById('graficos-section');
+    const btn     = document.getElementById('btn-toggle-graficos');
+    const visible = section.style.display !== 'none';
+
+    if (visible) {
+        section.style.display = 'none';
+        btn.innerHTML = '<span style="font-size:1rem;">📊</span> Ver Gráficos';
+        btn.style.background = 'var(--sidebar-bg)';
+    } else {
+        section.style.display = 'block';
+        btn.innerHTML = '<span style="font-size:1rem;">✕</span> Ocultar Gráficos';
+        btn.style.background = 'var(--accent-2)';
+        if (!graficosCreados) {
+            construirGraficos();
+            graficosCreados = true;
+        }
+    }
+}
+
+function construirGraficos() {
+    // ── Agrupar por comuna (ignorar nulos/vacíos) ──
+    const comunaMap = {};
+    const barrioMap = {};
+
+    allData.forEach(d => {
+        const c = (d.comuna || '').trim();
+        const b = (d.barrio  || '').trim();
+        if (c && c !== '—') comunaMap[c] = (comunaMap[c] || 0) + 1;
+        if (b && b !== '—') barrioMap[b] = (barrioMap[b] || 0) + 1;
+    });
+
+    // Ordenar de mayor a menor
+    const sortDesc = obj => Object.entries(obj).sort((a, b) => b[1] - a[1]);
+
+    const comunaEntries = sortDesc(comunaMap);
+    const barrioEntries = sortDesc(barrioMap);
+
+    const PALETTE = [
+        '#1c5f8a','#e8401c','#f59e0b','#10b981','#8b5cf6',
+        '#3b82f6','#ec4899','#06b6d4','#84cc16','#f97316',
+        '#6366f1','#14b8a6','#ef4444','#a855f7','#22c55e'
+    ];
+
+    const makeColors = n => Array.from({length: n}, (_, i) => PALETTE[i % PALETTE.length]);
+
+    const chartOpts = (label) => ({
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: ctx => ` ${ctx.parsed.x} reporte${ctx.parsed.x !== 1 ? 's' : ''}`
+                }
+            }
+        },
+        scales: {
+            x: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1,
+                    font: { family: "'IBM Plex Sans', sans-serif", size: 11 },
+                    color: '#6b7b8d'
+                },
+                grid: { color: '#f0f2f5' }
+            },
+            y: {
+                ticks: {
+                    font: { family: "'IBM Plex Sans', sans-serif", size: 11 },
+                    color: '#1a2535'
+                },
+                grid: { display: false }
+            }
+        }
+    });
+
+    // ── Gráfico Comunas ──
+    const ctxC = document.getElementById('grafico-comunas');
+    ctxC.height = Math.max(180, comunaEntries.length * 36);
+    chartComunas = new Chart(ctxC, {
+        type: 'bar',
+        data: {
+            labels: comunaEntries.map(e => e[0]),
+            datasets: [{
+                label: 'Reportes',
+                data: comunaEntries.map(e => e[1]),
+                backgroundColor: makeColors(comunaEntries.length),
+                borderRadius: 4,
+                borderSkipped: false,
+                barThickness: 18
+            }]
+        },
+        options: chartOpts('Reportes por Comuna')
+    });
+
+    // ── Gráfico Barrios ──
+    const ctxB = document.getElementById('grafico-barrios');
+    ctxB.height = Math.max(180, barrioEntries.length * 36);
+    chartBarrios = new Chart(ctxB, {
+        type: 'bar',
+        data: {
+            labels: barrioEntries.map(e => e[0]),
+            datasets: [{
+                label: 'Reportes',
+                data: barrioEntries.map(e => e[1]),
+                backgroundColor: makeColors(barrioEntries.length),
+                borderRadius: 4,
+                borderSkipped: false,
+                barThickness: 18
+            }]
+        },
+        options: chartOpts('Reportes por Barrio')
+    });
 }
 
 // ═══════════════════════════════════════════════
